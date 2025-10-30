@@ -1,0 +1,3 @@
+x,y,z,type,volume,cycle entry,custom:GFP,custom:sample
+0.0,0.0,0.0,tumor
+150.,150.,0.0,macrophage
