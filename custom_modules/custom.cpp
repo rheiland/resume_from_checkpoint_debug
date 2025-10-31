@@ -214,9 +214,9 @@ void contact_function( Cell* pMe, Phenotype& phenoMe , Cell* pOther, Phenotype& 
 { return; } 
 
 //------------------------------------------------------------
-void dump_cells_mat(std::string filename, Microenvironment& M)
+void dump_cells_mat(std::string filename, Microenvironment& M, bool create_cells)
 {
-    std::cout << "------- read START dump_cells_mat ----------\n";
+    std::cout << "\n------- read START dump_cells_mat (custom.cpp) ----------\n";
 
     // Get number of substrates, cell types, death models
     static int m = microenvironment.number_of_densities();
@@ -260,189 +260,247 @@ void dump_cells_mat(std::string filename, Microenvironment& M)
     
     double dTemp;
     double position[3];
-    int cell_ID;
+    int cell_ID, cell_type;
     double cell_vol;
     double orientation[3];
     double velocity[3];
     double migration_bias_direction[3];
     double motility_vector[3];
+    double params[10];
+    double *dptr;
     
     // Store attack target IDs for later resolution
     std::vector<int> attack_target_ids;
     
-    // Cell_Definition* pCD; 
+    Cell_Definition* pCD; 
+    Cell* pCell;
     // Read each cell
-    std::cout << "creating cells..." << std::endl;
+    // std::cout << "creating cells..." << std::endl;
+    std::cout << "reading cell data..." << std::endl;
     for (int i = 0; i < number_of_data_entries; i++)
     {
-        std::cout << " ---  creating cell # " << i << std::endl;
-        // Cell* pCell = create_cell();
+        std::cout << "\n ------  reading cell # " << i << std::endl;
         
-        // ID
         fread(&dTemp, sizeof(double), 1, fp);
-        // pCell->ID = (int)dTemp;
         cell_ID = (int)dTemp;
-        // std::cout << "   cell_ID = " << cell_ID  << std::endl;
-        std::cout << "ID= " << dTemp << std::endl; 
+        std::cout << "ID= " << cell_ID << std::endl; 
         
-        // position
         fread(position, sizeof(double), 3, fp);
         std::cout << "pos= " << position[0]<<", "<< position[1] << std::endl;
-        // pCell->position[0] = position[0];
-        // pCell->position[1] = position[1];
-        // pCell->position[2] = position[2];
-         // rwh - do these 2 things
-        // pCell->assign_position(position[0], position[1], position[2]);
-        // pCell->update_voxel_index();
         
-        // total_volume
-        // fread(&(pCell->phenotype.volume.total), sizeof(double), 1, fp);
         fread(&cell_vol, sizeof(double), 1, fp);
-        std::cout << "vol= " << cell_vol  << std::endl;
+        std::cout << "total vol= " << cell_vol  << std::endl;
         
-        // cell_type
         fread(&dTemp, sizeof(double), 1, fp);
-        std::cout << "type= " << int(dTemp)  << std::endl;
-        // pCell->type = (int)dTemp;
-        int i_cell_type = (int)dTemp;
-        // std::cout << "   i_cell_type = " << i_cell_type  << std::endl;
+        cell_type = (int)dTemp;
+        std::cout << "type= " << cell_type  << std::endl;
 
-        Cell_Definition* pCD = cell_definitions_by_type[i_cell_type]; 
-        // pCD = cell_definitions_by_type[i_cell_type]; 
-        // Cell* pCell = create_cell( *pCD );
+        if (create_cells)
+        {
+            // Cell_Definition* pCD = cell_definitions_by_type[cell_type]; 
+            pCD = cell_definitions_by_type[cell_type];    // rwh: better?
+            pCell = create_cell( *pCD );
 
-        // pCell->ID = cell_ID;
+            pCell->ID = cell_ID;
+            pCell->type = cell_type;
+            pCell->phenotype.volume.total = cell_vol;
 
-        // pCell->assign_position(position[0], position[1], position[2]);
-        // pCell->update_voxel_index();
+            pCell->assign_position(position[0], position[1], position[2]);
+            pCell->update_voxel_index();
+        }
         
-        // cycle_model
         fread(&dTemp, sizeof(double), 1, fp);
-        int cycle_model_code = (int)dTemp;
-        std::cout << "cycle model== " << int(dTemp)  << std::endl;
+        std::cout << "phenotype.cycle.model().code= " << int(dTemp)  << std::endl;
+        if (create_cells)
+            pCell->phenotype.cycle.model().code = int(dTemp);
         
-        // current_phase
         fread(&dTemp, sizeof(double), 1, fp);
-        int current_phase_code = (int)dTemp;
-        std::cout << "cycle phase= " << int(dTemp)  << std::endl;
+        std::cout << "phenotype.cycle.current_phase().code = current_phase(?) = " << int(dTemp)  << std::endl;
+        if (create_cells)
+            pCell->phenotype.cycle.current_phase().code = int(dTemp);
         
-        // elapsed_time_in_phase
         fread(&dTemp, sizeof(double), 1, fp);
-        std::cout << "elapsed time= " << dTemp  << std::endl;
+        std::cout << "phenotype.cycle.data.elapsed_time_in_phase= " << dTemp  << std::endl;
+        if (create_cells)
+            pCell->phenotype.cycle.data.elapsed_time_in_phase = dTemp;
         
-        // nuclear_volume
         fread(&dTemp, sizeof(double), 1, fp);
-        std::cout << "volume nuclear= " << dTemp  << std::endl;
+        std::cout << "phenotype.volume.nuclear= " << dTemp  << std::endl;
+        if (create_cells)
+            pCell->phenotype.volume.nuclear = dTemp;
         
-        // cytoplasmic_volume
         fread(&dTemp, sizeof(double), 1, fp);
-        std::cout << "volume cyto= " << dTemp  << std::endl;
+        std::cout << "phenotype.volume.cytoplasmic= " << dTemp  << std::endl;
+        if (create_cells)
+            pCell->phenotype.volume.cytoplasmic = dTemp;
         
-        // fluid_fraction
         fread(&dTemp, sizeof(double), 1, fp);
-        std::cout << "volume fluid frac= " << dTemp  << std::endl;
+        std::cout << "phenotype.volume.fluid_fraction= " << dTemp  << std::endl;
+        if (create_cells)
+            pCell->phenotype.volume.fluid_fraction = dTemp;
         
-        // calcified_fraction
         fread(&dTemp, sizeof(double), 1, fp);
-        std::cout << "volume calc frac= " << dTemp  << std::endl;
+        std::cout << "phenotype.volume.calcified_fraction= " << dTemp  << std::endl;
+        if (create_cells)
+            pCell->phenotype.volume.calcified_fraction = dTemp;
         
-        // orientation
         fread(orientation, sizeof(double), 3, fp);
         std::cout << "orientation= " << orientation[0]<<", "<<orientation[1]<<", " << orientation[2]  << std::endl;
-        // pCell->state.orientation[0] = orientation[0];
-        // pCell->state.orientation[1] = orientation[1];
-        // pCell->state.orientation[2] = orientation[2];
+        if (create_cells)
+        {
+            pCell->state.orientation[0] = orientation[0];
+            pCell->state.orientation[1] = orientation[1];
+            pCell->state.orientation[2] = orientation[2];
+        }
         
-        // polarity
         fread(&dTemp, sizeof(double), 1, fp);
-        std::cout << "polarity= " << dTemp  << std::endl;
+        std::cout << "phenotype.geometry.polarity= " << dTemp  << std::endl;
+        if (create_cells)
+            pCell->phenotype.geometry.polarity = dTemp;
         
 
         std::cout << "------ state:\n";
-        // velocity
         fread(velocity, sizeof(double), 3, fp);
         std::cout << "velocity= " << velocity[0]<<", "<<velocity[1]<<", " << velocity[2]  << std::endl;
-        // pCell->velocity[0] = velocity[0];
-        // pCell->velocity[1] = velocity[1];
-        // pCell->velocity[2] = velocity[2];
+        if (create_cells)
+        {
+            pCell->velocity[0] = velocity[0];
+            pCell->velocity[1] = velocity[1];
+            pCell->velocity[2] = velocity[2];
+        }
         
-        // pressure
         fread(&dTemp, sizeof(double), 1, fp);
-        std::cout << "pressure= " << dTemp  << std::endl;
+        std::cout << "state.simple_pressure= " << dTemp  << std::endl;
+        if (create_cells)
+            pCell->state.simple_pressure = dTemp;
         
-        // number_of_nuclei
         fread(&dTemp, sizeof(double), 1, fp);
-        std::cout << "# nuclei= " << dTemp  << std::endl;
-        // pCell->state.number_of_nuclei = (int)dTemp;
+        std::cout << "state.number_of_nuclei= " << (int)dTemp  << std::endl;
+        if (create_cells)
+            pCell->state.number_of_nuclei = (int)dTemp;
         
-        // total_attack_time
         fread(&dTemp, sizeof(double), 1, fp);
-        std::cout << "attack time= " << dTemp  << std::endl;
+        std::cout << "state.total_attack_time= " << dTemp  << std::endl;
+        if (create_cells)
+            pCell->state.total_attack_time = dTemp;
         
-        // contact_with_basement_membrane
         fread(&dTemp, sizeof(double), 1, fp);
-        std::cout << "contact w BM= " << int(dTemp)  << std::endl;
-        // pCell->state.contact_with_basement_membrane = (bool)dTemp;
+        std::cout << "state.contact_with_basement_membrane= " << bool(dTemp)  << std::endl;
+        if (create_cells)
+            pCell->state.contact_with_basement_membrane = (bool)dTemp;
         
 
         std::cout << "------ cycle:\n";
         // current_cycle_phase_exit_rate
+        // rwh - what do I use??
         // int phase_index = pCell->phenotype.cycle.data.current_phase_index;
+        // int phase_index = pCell->phenotype.cycle.current_phase().code;
         fread(&dTemp, sizeof(double), 1, fp);
-        std::cout << "current phase exit rate= " << dTemp  << std::endl;
+        std::cout << "phenotype.cycle.data.exit_rate(phase_index)= " << dTemp  << std::endl;
+        if (create_cells)
+            pCell->phenotype.cycle.data.exit_rate(phase_index) = dTemp;
         
-        // elapsed_time_in_phase (duplicate)
+        // elapsed_time_in_phase (duplicate: rf. https://github.com/MathCancer/PhysiCell/pull/380)
         fread(&dTemp, sizeof(double), 1, fp);
-        std::cout << "elapsed time= " << dTemp  << std::endl;
+        std::cout << "phenotype.cycle.data.elapsed_time_in_phase= " << dTemp  << std::endl;
+        if (create_cells)
+            pCell->phenotype.cycle.data.elapsed_time_in_phase = dTemp;
         
 
         std::cout << "------ death:\n";
-        // dead
         fread(&dTemp, sizeof(double), 1, fp);
-        // pCell->phenotype.death.dead = (bool)dTemp;
-        std::cout << " dead= " << int(dTemp)  << std::endl;
+        std::cout << " phenotype.death.dead= " << bool(dTemp)  << std::endl;
+        if (create_cells)
+            pCell->phenotype.death.dead = (bool)dTemp;
         
-        // current_death_model
         fread(&dTemp, sizeof(double), 1, fp);
-        std::cout << " current_death_model_index= " << int(dTemp)  << std::endl;
-        // pCell->phenotype.death.current_death_model_index = (int)dTemp;
+        std::cout << " phenotype.death.current_death_model_index= " << int(dTemp)  << std::endl;
+        if (create_cells)
+            pCell->phenotype.death.current_death_model_index = (int)dTemp;
         
         // Set nd from first cell if not set
         // if (nd == 0)
         // {
         //     nd = pCell->phenotype.death.rates.size();
         // }
+        int ndeath = pCell->phenotype.death.rates.size();
+        // std::cout << " phenotype.death.rates.size()= " <<  pCell->phenotype.death.rates.size()  << std::endl;
+        std::cout << " phenotype.death.rates.size()= " <<  ndeath  << std::endl;
+        fread(dptr, sizeof(double), ndeath, fp);
+        for (idx=0; idx < ndeath); idx++)
+        {
+            fread(&dTemp, sizeof(double), 1, fp);
+            std::cout << " phenotype.death.rates[" << idx << "] = " << dTemp  << std::endl;
+            if (create_cells)
+                pCell->phenotype.death.rates[idx] = dTemp;
+        }
         
         // death_rates
         //rwh
         // fread(pCell->phenotype.death.rates.data(), sizeof(double), nd, fp);
         
+        if (create_cells)
+        {
+            // pCell->phenotype.death.rates.data()
+            for (int idx=0; idx<ndeath; idx++)
+                pCell->phenotype.death.rates[idx] = dptr[idx]
+        }
+
         // Volume rates
-        fread(&dTemp, sizeof(double), 1, fp);
-        fread(&dTemp, sizeof(double), 1, fp);
-        fread(&dTemp, sizeof(double), 1, fp);
-        fread(&dTemp, sizeof(double), 1, fp);
-        fread(&dTemp, sizeof(double), 1, fp);
-        fread(&dTemp, sizeof(double), 1, fp);
-        fread(&dTemp, sizeof(double), 1, fp);
+        fread(params, sizeof(double), 7, fp);
+        std::cout << "phenotype.volume.cytoplasmic_biomass_change_rate= " << params[0] << std::endl;
+        std::cout << "phenotype.volume.nuclear_biomass_change_rate= " << params[1] << std::endl;
+        std::cout << "phenotype.volume.fluid_change_rate= " << params[2] << std::endl;
+        std::cout << "phenotype.volume.calcification_rate= " << params[3] << std::endl;
+        std::cout << "phenotype.volume.target_solid_cytoplasmic= " << params[4] << std::endl;
+        std::cout << "phenotype.volume.target_solid_nuclear= " << params[5] << std::endl;
+        std::cout << "phenotype.volume.target_fluid_fraction= " << params[6] << std::endl;
+        if (create_cells)
+        {
+            pCell->phenotype.volume.cytoplasmic_biomass_change_rate = params[0];
+            pCell->phenotype.volume.nuclear_biomass_change_rate = params[1];
+            pCell->phenotype.volume.fluid_change_rate = params[2];
+            pCell->phenotype.volume.calcification_rate = params[3];
+            pCell->phenotype.volume.target_solid_cytoplasmic = params[4];
+            pCell->phenotype.volume.target_solid_nuclear = params[5];
+            pCell->phenotype.volume.target_fluid_fraction = params[6];
+        }
+
         
         // Geometry
-        fread(&dTemp, sizeof(double), 1, fp);
-        fread(&dTemp, sizeof(double), 1, fp);
-        fread(&dTemp, sizeof(double), 1, fp);
+        fread(params, sizeof(double), 3, fp);
+        std::cout << "phenotype.geometry.radius= " << params[0] << std::endl;
+        std::cout << "phenotype.geometry.nuclear_radius= " << params[1] << std::endl;
+        std::cout << "phenotype.geometry.surface_area= " << params[2] << std::endl;
+        if (create_cells)
+        {
+            pCell->phenotype.geometry.radius= params[0];
+            pCell->phenotype.geometry.nuclear_radius= params[1];
+            pCell->pCell->phenotype.geometry.surface_area = params[2];
+        }
         
         // Mechanics
+        fread(params, sizeof(double), 4, fp);
+        std::cout << "phenotype.mechanics.cell_cell_adhesion_strength= " << params[0] << std::endl;
+        std::cout << "phenotype.mechanics.cell_BM_adhesion_strength= " << params[1] << std::endl;
+        std::cout << "phenotype.mechanics.cell_cell_repulsion_strength= " << params[2] << std::endl;
+        std::cout << "phenotype.mechanics.cell_BM_repulsion_strength= " << params[3] << std::endl;
+        if (create_cells)
+        {
+            pCell->phenotype.mechanics.cell_cell_adhesion_strength= params[0];
+            pCell->phenotype.mechanics.cell_BM_adhesion_strength= params[1];
+            pCell->phenotype.mechanics.cell_cell_repulsion_strength = params[2];
+            pCell->phenotype.mechanics.cell_BM_repulsion_strength = params[3];
+        }
+
+        fread(pCell->phenotype.mechanics.cell_adhesion_affinities.data(), sizeof(double), n, fp);  // NOTE
+
+        fread(&(pCell->phenotype.mechanics.relative_maximum_adhesion_distance), sizeof(double), 1, fp);
         fread(&dTemp, sizeof(double), 1, fp);
-        fread(&dTemp, sizeof(double), 1, fp);
-        fread(&dTemp, sizeof(double), 1, fp);
-        fread(&dTemp, sizeof(double), 1, fp);
-        // fread(pCell->phenotype.mechanics.cell_adhesion_affinities.data(), sizeof(double), n, fp);
-        fread(&dTemp, sizeof(double), 1, fp);
-        fread(&dTemp, sizeof(double), 1, fp);
-        // pCell->phenotype.mechanics.maximum_number_of_attachments = (int)dTemp;
-        fread(&dTemp, sizeof(double), 1, fp);
-        fread(&dTemp, sizeof(double), 1, fp);
-        fread(&dTemp, sizeof(double), 1, fp);
+        pCell->phenotype.mechanics.maximum_number_of_attachments = (int)dTemp;
+        fread(&(pCell->phenotype.mechanics.attachment_elastic_constant), sizeof(double), 1, fp);
+        fread(&(pCell->phenotype.mechanics.attachment_rate), sizeof(double), 1, fp);
+        fread(&(pCell->phenotype.mechanics.detachment_rate), sizeof(double), 1, fp);
         
         // Motility
         fread(&dTemp, sizeof(double), 1, fp);
