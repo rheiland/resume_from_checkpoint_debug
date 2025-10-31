@@ -1284,7 +1284,7 @@ void add_PhysiCell_cells_to_open_xml_pugi_v2( pugi::xml_document& xml_dom, std::
 	}
 
 	fclose( fp ); 
-    dump_cell_mat_vars(number_of_data_entries);
+    // dump_cell_mat_vars(number_of_data_entries);
 
 #ifdef ADDON_PHYSIBOSS
 
@@ -1582,7 +1582,7 @@ void read_PhysiCell_cells_from_matlab_v2(std::string filename, Microenvironment&
     static int n = cell_definition_indices_by_name.size();
     std::cout << "------- number_of_densities= " << m << std::endl;
     std::cout << "------- number of cell types= " << n << std::endl;
-    static int nd = 0; // will be set from first cell
+    int nd = 0; // will be set from first cell
     
     // Open the MAT file for reading
     FILE* fp = fopen(filename.c_str(), "rb");
@@ -1619,7 +1619,7 @@ void read_PhysiCell_cells_from_matlab_v2(std::string filename, Microenvironment&
     
     double dTemp;
     double position[3];
-    int cell_ID;
+    int cell_ID, cell_type;
     double cell_vol;
     double orientation[3];
     double velocity[3];
@@ -1635,23 +1635,16 @@ void read_PhysiCell_cells_from_matlab_v2(std::string filename, Microenvironment&
     for (int i = 0; i < number_of_data_entries; i++)
     {
         std::cout << " ---  creating cell # " << i << std::endl;
-        // Cell* pCell = create_cell();
+        // Cell* pCell = create_cell();   // NO! create it after knowing its cell def (below)
         
         // ID
         fread(&dTemp, sizeof(double), 1, fp);
-        // pCell->ID = (int)dTemp;
         cell_ID = (int)dTemp;
         std::cout << "   cell_ID = " << cell_ID  << std::endl;
         
         // position
         fread(position, sizeof(double), 3, fp);
         std::cout << "   position = " << position[0]<<", "<< position[1] << std::endl;
-        // pCell->position[0] = position[0];
-        // pCell->position[1] = position[1];
-        // pCell->position[2] = position[2];
-         // rwh - do these 2 things
-        // pCell->assign_position(position[0], position[1], position[2]);
-        // pCell->update_voxel_index();
         
         // total_volume
         // fread(&(pCell->phenotype.volume.total), sizeof(double), 1, fp);
@@ -1662,25 +1655,29 @@ void read_PhysiCell_cells_from_matlab_v2(std::string filename, Microenvironment&
         fread(&dTemp, sizeof(double), 1, fp);
         std::cout << "   cell_type(dTemp) = " << dTemp  << std::endl;
         // pCell->type = (int)dTemp;
-        int i_cell_type = (int)dTemp;
-        std::cout << "   i_cell_type = " << i_cell_type  << std::endl;
+        cell_type = (int)dTemp;
+        std::cout << "   cell_type = " << cell_type  << std::endl;
 
         Cell_Definition* pCD = cell_definitions_by_type[i_cell_type]; 
         // pCD = cell_definitions_by_type[i_cell_type]; 
-        Cell* pCell = create_cell( *pCD );
+
+
+        Cell* pCell = create_cell( *pCD );  //  <------------  create cell
 
         pCell->ID = cell_ID;
+        pCell->type = cell_type;
+        pCell->phenotype.volume.total = cell_vol;
 
         pCell->assign_position(position[0], position[1], position[2]);
         pCell->update_voxel_index();
         
         // cycle_model
         fread(&dTemp, sizeof(double), 1, fp);
-        int cycle_model_code = (int)dTemp;
+        pCell->phenotype.cycle.model().code = int(dTemp);
         
         // current_phase
         fread(&dTemp, sizeof(double), 1, fp);
-        int current_phase_code = (int)dTemp;
+        pCell->phenotype.cycle.current_phase().code = (int)dTemp;
         
         // elapsed_time_in_phase
         fread(&(pCell->phenotype.cycle.data.elapsed_time_in_phase), sizeof(double), 1, fp);
@@ -1726,7 +1723,7 @@ void read_PhysiCell_cells_from_matlab_v2(std::string filename, Microenvironment&
         fread(&dTemp, sizeof(double), 1, fp);
         pCell->state.contact_with_basement_membrane = (bool)dTemp;
         
-        // current_cycle_phase_exit_rate
+        // current_cycle_phase_exit_rate  (rwh: isn't this weird? we don't know the current_phase_index)
         int phase_index = pCell->phenotype.cycle.data.current_phase_index;
         fread(&(pCell->phenotype.cycle.data.exit_rate(phase_index)), sizeof(double), 1, fp);
         

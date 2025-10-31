@@ -216,7 +216,7 @@ void contact_function( Cell* pMe, Phenotype& phenoMe , Cell* pOther, Phenotype& 
 //------------------------------------------------------------
 void dump_cells_mat(std::string filename, Microenvironment& M)
 {
-    std::cout << "------- start dump_cells_mat ----------\n";
+    std::cout << "------- read START dump_cells_mat ----------\n";
 
     // Get number of substrates, cell types, death models
     static int m = microenvironment.number_of_densities();
@@ -282,11 +282,12 @@ void dump_cells_mat(std::string filename, Microenvironment& M)
         fread(&dTemp, sizeof(double), 1, fp);
         // pCell->ID = (int)dTemp;
         cell_ID = (int)dTemp;
-        std::cout << "   cell_ID = " << cell_ID  << std::endl;
+        // std::cout << "   cell_ID = " << cell_ID  << std::endl;
+        std::cout << "ID= " << dTemp << std::endl; 
         
         // position
         fread(position, sizeof(double), 3, fp);
-        std::cout << "   position = " << position[0]<<", "<< position[1] << std::endl;
+        std::cout << "pos= " << position[0]<<", "<< position[1] << std::endl;
         // pCell->position[0] = position[0];
         // pCell->position[1] = position[1];
         // pCell->position[2] = position[2];
@@ -297,11 +298,11 @@ void dump_cells_mat(std::string filename, Microenvironment& M)
         // total_volume
         // fread(&(pCell->phenotype.volume.total), sizeof(double), 1, fp);
         fread(&cell_vol, sizeof(double), 1, fp);
-        std::cout << "   cell_vol = " << cell_vol  << std::endl;
+        std::cout << "vol= " << cell_vol  << std::endl;
         
         // cell_type
         fread(&dTemp, sizeof(double), 1, fp);
-        std::cout << "   cell_type(dTemp) = " << dTemp  << std::endl;
+        std::cout << "type= " << int(dTemp)  << std::endl;
         // pCell->type = (int)dTemp;
         int i_cell_type = (int)dTemp;
         // std::cout << "   i_cell_type = " << i_cell_type  << std::endl;
@@ -318,68 +319,92 @@ void dump_cells_mat(std::string filename, Microenvironment& M)
         // cycle_model
         fread(&dTemp, sizeof(double), 1, fp);
         int cycle_model_code = (int)dTemp;
+        std::cout << "cycle model== " << int(dTemp)  << std::endl;
         
         // current_phase
         fread(&dTemp, sizeof(double), 1, fp);
         int current_phase_code = (int)dTemp;
+        std::cout << "cycle phase= " << int(dTemp)  << std::endl;
         
         // elapsed_time_in_phase
         fread(&dTemp, sizeof(double), 1, fp);
+        std::cout << "elapsed time= " << dTemp  << std::endl;
         
         // nuclear_volume
         fread(&dTemp, sizeof(double), 1, fp);
+        std::cout << "volume nuclear= " << dTemp  << std::endl;
         
         // cytoplasmic_volume
         fread(&dTemp, sizeof(double), 1, fp);
+        std::cout << "volume cyto= " << dTemp  << std::endl;
         
         // fluid_fraction
         fread(&dTemp, sizeof(double), 1, fp);
+        std::cout << "volume fluid frac= " << dTemp  << std::endl;
         
         // calcified_fraction
         fread(&dTemp, sizeof(double), 1, fp);
+        std::cout << "volume calc frac= " << dTemp  << std::endl;
         
         // orientation
         fread(orientation, sizeof(double), 3, fp);
+        std::cout << "orientation= " << orientation[0]<<", "<<orientation[1]<<", " << orientation[2]  << std::endl;
         // pCell->state.orientation[0] = orientation[0];
         // pCell->state.orientation[1] = orientation[1];
         // pCell->state.orientation[2] = orientation[2];
         
         // polarity
         fread(&dTemp, sizeof(double), 1, fp);
+        std::cout << "polarity= " << dTemp  << std::endl;
         
+
+        std::cout << "------ state:\n";
         // velocity
         fread(velocity, sizeof(double), 3, fp);
+        std::cout << "velocity= " << velocity[0]<<", "<<velocity[1]<<", " << velocity[2]  << std::endl;
         // pCell->velocity[0] = velocity[0];
         // pCell->velocity[1] = velocity[1];
         // pCell->velocity[2] = velocity[2];
         
         // pressure
         fread(&dTemp, sizeof(double), 1, fp);
+        std::cout << "pressure= " << dTemp  << std::endl;
         
         // number_of_nuclei
         fread(&dTemp, sizeof(double), 1, fp);
+        std::cout << "# nuclei= " << dTemp  << std::endl;
         // pCell->state.number_of_nuclei = (int)dTemp;
         
         // total_attack_time
         fread(&dTemp, sizeof(double), 1, fp);
+        std::cout << "attack time= " << dTemp  << std::endl;
         
         // contact_with_basement_membrane
         fread(&dTemp, sizeof(double), 1, fp);
+        std::cout << "contact w BM= " << int(dTemp)  << std::endl;
         // pCell->state.contact_with_basement_membrane = (bool)dTemp;
         
+
+        std::cout << "------ cycle:\n";
         // current_cycle_phase_exit_rate
         // int phase_index = pCell->phenotype.cycle.data.current_phase_index;
         fread(&dTemp, sizeof(double), 1, fp);
+        std::cout << "current phase exit rate= " << dTemp  << std::endl;
         
         // elapsed_time_in_phase (duplicate)
         fread(&dTemp, sizeof(double), 1, fp);
+        std::cout << "elapsed time= " << dTemp  << std::endl;
         
+
+        std::cout << "------ death:\n";
         // dead
         fread(&dTemp, sizeof(double), 1, fp);
         // pCell->phenotype.death.dead = (bool)dTemp;
+        std::cout << " dead= " << int(dTemp)  << std::endl;
         
         // current_death_model
         fread(&dTemp, sizeof(double), 1, fp);
+        std::cout << " current_death_model_index= " << int(dTemp)  << std::endl;
         // pCell->phenotype.death.current_death_model_index = (int)dTemp;
         
         // Set nd from first cell if not set
