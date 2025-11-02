@@ -219,10 +219,10 @@ void dump_cells_mat(std::string filename, Microenvironment& M, bool create_cells
     std::cout << "\n------- read START dump_cells_mat (custom.cpp) ----------\n";
 
     // Get number of substrates, cell types, death models
-    static int m = microenvironment.number_of_densities();
-    static int n = cell_definition_indices_by_name.size();
-    std::cout << "------- number_of_densities= " << m << std::endl;
-    std::cout << "------- number of cell types= " << n << std::endl;
+    static int m_densities = microenvironment.number_of_densities();
+    static int n_cell_types = cell_definition_indices_by_name.size();
+    std::cout << "------- number_of_densities= " << m_densities << std::endl;
+    std::cout << "------- number of cell types= " << n_cell_types << std::endl;
     static int nd = 0; // will be set from first cell
     
     // Open the MAT file for reading
@@ -315,6 +315,7 @@ void dump_cells_mat(std::string filename, Microenvironment& M, bool create_cells
             pCell->phenotype.cycle.model().code = int(dTemp);
         
         fread(&dTemp, sizeof(double), 1, fp);
+        // std::cout << "phenotype.cycle.current_phase()= " << int(dTemp)  << std::endl;
         std::cout << "phenotype.cycle.current_phase().code = current_phase(?) = " << int(dTemp)  << std::endl;
         if (create_cells)
             pCell->phenotype.cycle.current_phase().code = int(dTemp);
@@ -397,8 +398,8 @@ void dump_cells_mat(std::string filename, Microenvironment& M, bool create_cells
         // int phase_index = pCell->phenotype.cycle.current_phase().code;
         fread(&dTemp, sizeof(double), 1, fp);
         std::cout << "phenotype.cycle.data.exit_rate(phase_index)= " << dTemp  << std::endl;
-        if (create_cells)
-            pCell->phenotype.cycle.data.exit_rate(phase_index) = dTemp;
+        // if (create_cells)
+        //     pCell->phenotype.cycle.data.exit_rate(phase_index) = dTemp;    // rwh - fix this!!
         
         // elapsed_time_in_phase (duplicate: rf. https://github.com/MathCancer/PhysiCell/pull/380)
         fread(&dTemp, sizeof(double), 1, fp);
@@ -423,28 +424,27 @@ void dump_cells_mat(std::string filename, Microenvironment& M, bool create_cells
         // {
         //     nd = pCell->phenotype.death.rates.size();
         // }
-        int ndeath = pCell->phenotype.death.rates.size();
+        // int ndeath = pCell->phenotype.death.rates.size();
+        // if (ndeath > 10 || ndeath < 2)
+        int ndeath = 2;
+        if (true)
+        {
+            std::cout << "------ pCell->phenotype.death.rates.size() = " << pCell->phenotype.death.rates.size() <<" ; resetting = 2" << std::endl;
+            // <label index="28" size="2" units="1/min">death_rates</label>
+            pCell->phenotype.death.rates.resize(2);
+            ndeath = 2;
+        }
         // std::cout << " phenotype.death.rates.size()= " <<  pCell->phenotype.death.rates.size()  << std::endl;
         std::cout << " phenotype.death.rates.size()= " <<  ndeath  << std::endl;
-        fread(dptr, sizeof(double), ndeath, fp);
-        for (idx=0; idx < ndeath); idx++)
+        // fread(dptr, sizeof(double), ndeath, fp);
+        for (int idx=0; idx < ndeath; idx++)
         {
             fread(&dTemp, sizeof(double), 1, fp);
-            std::cout << " phenotype.death.rates[" << idx << "] = " << dTemp  << std::endl;
+            std::cout << "  phenotype.death.rates[" << idx << "] = " << dTemp  << std::endl;
             if (create_cells)
                 pCell->phenotype.death.rates[idx] = dTemp;
         }
         
-        // death_rates
-        //rwh
-        // fread(pCell->phenotype.death.rates.data(), sizeof(double), nd, fp);
-        
-        if (create_cells)
-        {
-            // pCell->phenotype.death.rates.data()
-            for (int idx=0; idx<ndeath; idx++)
-                pCell->phenotype.death.rates[idx] = dptr[idx]
-        }
 
         // Volume rates
         fread(params, sizeof(double), 7, fp);
@@ -476,7 +476,7 @@ void dump_cells_mat(std::string filename, Microenvironment& M, bool create_cells
         {
             pCell->phenotype.geometry.radius= params[0];
             pCell->phenotype.geometry.nuclear_radius= params[1];
-            pCell->pCell->phenotype.geometry.surface_area = params[2];
+            pCell->phenotype.geometry.surface_area = params[2];
         }
         
         // Mechanics
@@ -493,55 +493,212 @@ void dump_cells_mat(std::string filename, Microenvironment& M, bool create_cells
             pCell->phenotype.mechanics.cell_BM_repulsion_strength = params[3];
         }
 
-        fread(pCell->phenotype.mechanics.cell_adhesion_affinities.data(), sizeof(double), n, fp);  // NOTE
+        // fread(pCell->phenotype.mechanics.cell_adhesion_affinities.data(), sizeof(double), n, fp);  // NOTE
+        pCell->phenotype.mechanics.cell_adhesion_affinities.resize(n_cell_types);
+        for (int idx=0; idx < n_cell_types; idx++)
+        {
+            fread(&dTemp, sizeof(double), 1, fp);
+            std::cout << " phenotype.mechanics.cell_adhesion_affinities[" << idx << "] = " << dTemp << std::endl;
+            if (create_cells)
+                pCell->phenotype.mechanics.cell_adhesion_affinities[idx] = dTemp;
+        }
 
-        fread(&(pCell->phenotype.mechanics.relative_maximum_adhesion_distance), sizeof(double), 1, fp);
-        fread(&dTemp, sizeof(double), 1, fp);
+        // continuation of mechanics params
+        fread(params, sizeof(double), 5, fp);
         pCell->phenotype.mechanics.maximum_number_of_attachments = (int)dTemp;
-        fread(&(pCell->phenotype.mechanics.attachment_elastic_constant), sizeof(double), 1, fp);
-        fread(&(pCell->phenotype.mechanics.attachment_rate), sizeof(double), 1, fp);
-        fread(&(pCell->phenotype.mechanics.detachment_rate), sizeof(double), 1, fp);
+        std::cout << "pCell->phenotype.mechanics.attachment_elastic_constant = " << params[0] << std::endl;
+        std::cout << "pCell->phenotype.mechanics.attachment_rate = " << params[1] << std::endl;
+        std::cout << "pCell->phenotype.mechanics.detachment_rate = " << params[2] << std::endl;
+        std::cout << "pCell->phenotype.relative_maximum_adhesion_distance = " << params[3] << std::endl;
+        std::cout << "pCell->phenotype.mechanics.maximum_number_of_attachments = " << (int)params[4] << std::endl;
+        if (create_cells)
+        {
+            pCell->phenotype.mechanics.attachment_elastic_constant = params[0];
+            pCell->phenotype.mechanics.attachment_rate = params[1];
+            pCell->phenotype.mechanics.detachment_rate = params[2];
+            pCell->phenotype.mechanics.relative_maximum_adhesion_distance = params[3];
+            pCell->phenotype.mechanics.maximum_number_of_attachments = (int)params[4];
+        }
+
         
         // Motility
         fread(&dTemp, sizeof(double), 1, fp);
-        // pCell->phenotype.motility.is_motile = (bool)dTemp;
-        fread(&dTemp, sizeof(double), 1, fp);
-        fread(&dTemp, sizeof(double), 1, fp);
-        fread(migration_bias_direction, sizeof(double), 3, fp);
-        // pCell->phenotype.motility.migration_bias_direction[0] = migration_bias_direction[0];
-        // pCell->phenotype.motility.migration_bias_direction[1] = migration_bias_direction[1];
-        // pCell->phenotype.motility.migration_bias_direction[2] = migration_bias_direction[2];
-        fread(&dTemp, sizeof(double), 1, fp);
-        fread(motility_vector, sizeof(double), 3, fp);
-        // pCell->phenotype.motility.motility_vector[0] = motility_vector[0];
-        // pCell->phenotype.motility.motility_vector[1] = motility_vector[1];
-        // pCell->phenotype.motility.motility_vector[2] = motility_vector[2];
-        fread(&dTemp, sizeof(double), 1, fp);
-        // pCell->phenotype.motility.chemotaxis_index = (int)dTemp;
-        fread(&dTemp, sizeof(double), 1, fp);
-        // pCell->phenotype.motility.chemotaxis_direction = (int)dTemp;
+        std::cout << "pCell->phenotype.motility.is_motile = " << (bool)dTemp << std::endl;
+        if (create_cells)
+            pCell->phenotype.motility.is_motile = (bool)dTemp;
 
-        // rwh - fix!
-        // fread(pCell->phenotype.motility.chemotactic_sensitivities.data(), sizeof(double), m, fp);
+        fread(&dTemp, sizeof(double), 1, fp);
+        std::cout << "pCell->phenotype.motility.persistence_time = " << dTemp << std::endl;
+        if (create_cells)
+            pCell->phenotype.motility.persistence_time = dTemp;
+
+        fread(&dTemp, sizeof(double), 1, fp);
+        std::cout << "pCell->phenotype.motility.migration_speed = " << dTemp << std::endl;
+        if (create_cells)
+            pCell->phenotype.motility.migration_speed = dTemp;
+
+        fread(migration_bias_direction, sizeof(double), 3, fp);
+        std::cout << "pCell->phenotype.motility.migration_speed = " << migration_bias_direction[0]<<", " <<migration_bias_direction[1] << ", " << migration_bias_direction[2] << std::endl;
+        if (create_cells)
+        {
+            pCell->phenotype.motility.migration_bias_direction[0] = migration_bias_direction[0];
+            pCell->phenotype.motility.migration_bias_direction[1] = migration_bias_direction[1];
+            pCell->phenotype.motility.migration_bias_direction[2] = migration_bias_direction[2];
+        }
+
+        fread(&dTemp, sizeof(double), 1, fp);
+        std::cout << "pCell->phenotype.motility.migration_bias = " << dTemp <<std::endl;
+        if (create_cells)
+            pCell->phenotype.motility.migration_bias = dTemp;
+
+        fread(motility_vector, sizeof(double), 3, fp);
+        std::cout << "pCell->phenotype.motility.motility_vector = " << motility_vector[0]<<", " <<motility_vector[1] << ", " << motility_vector[2] << std::endl;
+        if (create_cells)
+        {
+            pCell->phenotype.motility.motility_vector[0] = motility_vector[0];
+            pCell->phenotype.motility.motility_vector[1] = motility_vector[1];
+            pCell->phenotype.motility.motility_vector[2] = motility_vector[2];
+        }
+
+        fread(&dTemp, sizeof(double), 1, fp);
+        std::cout << "pCell->phenotype.motility.chemotaxis_index = " << (int)dTemp <<std::endl;
+        if (create_cells)
+            pCell->phenotype.motility.chemotaxis_index = (int)dTemp;
+
+        fread(&dTemp, sizeof(double), 1, fp);
+        std::cout << "pCell->phenotype.motility.chemotaxis_direction = " << (int)dTemp <<std::endl;
+        if (create_cells)
+            pCell->phenotype.motility.chemotaxis_direction = (int)dTemp;
+
+        // rwh - is this correct?
+        pCell->phenotype.motility.chemotactic_sensitivities.resize(m_densities);
+        for (int idx=0; idx < m_densities; idx++)
+        {
+            fread(&dTemp, sizeof(double), 1, fp);
+            std::cout << " phenotype.motility.chemotactic_sensitivities[" << idx << "] = " << dTemp << std::endl;
+            if (create_cells)
+                pCell->phenotype.motility.chemotactic_sensitivities[idx] = dTemp;
+        }
         
-        // // Secretion
+        // Secretion
         // fread(pCell->phenotype.secretion.secretion_rates.data(), sizeof(double), m, fp);
+        pCell->phenotype.secretion.secretion_rates.resize(m_densities);
+        for (int idx=0; idx < m_densities; idx++)
+        {
+            fread(&dTemp, sizeof(double), 1, fp);
+            std::cout << " phenotype.secretion.secretion_rates[" << idx << "] = " << dTemp << std::endl;
+            if (create_cells)
+                pCell->phenotype.secretion.secretion_rates[idx] = dTemp;
+        }
+
         // fread(pCell->phenotype.secretion.uptake_rates.data(), sizeof(double), m, fp);
+        pCell->phenotype.secretion.uptake_rates.resize(m_densities);
+        for (int idx=0; idx < m_densities; idx++)
+        {
+            fread(&dTemp, sizeof(double), 1, fp);
+            std::cout << " phenotype.secretion.uptake_rates[" << idx << "] = " << dTemp << std::endl;
+            if (create_cells)
+                pCell->phenotype.secretion.uptake_rates[idx] = dTemp;
+        }
+
         // fread(pCell->phenotype.secretion.saturation_densities.data(), sizeof(double), m, fp);
+        pCell->phenotype.secretion.saturation_densities.resize(m_densities);
+        for (int idx=0; idx < m_densities; idx++)
+        {
+            fread(&dTemp, sizeof(double), 1, fp);
+            std::cout << " phenotype.secretion.saturation_densities[" << idx << "] = " << dTemp << std::endl;
+            if (create_cells)
+                pCell->phenotype.secretion.saturation_densities[idx] = dTemp;
+        }
+
         // fread(pCell->phenotype.secretion.net_export_rates.data(), sizeof(double), m, fp);
+        pCell->phenotype.secretion.net_export_rates.resize(m_densities);
+        for (int idx=0; idx < m_densities; idx++)
+        {
+            fread(&dTemp, sizeof(double), 1, fp);
+            std::cout << " phenotype.secretion.net_export_rates[" << idx << "] = " << dTemp << std::endl;
+            if (create_cells)
+                pCell->phenotype.secretion.net_export_rates[idx] = dTemp;
+        }
         
+
         // // Molecular
         // fread(pCell->phenotype.molecular.internalized_total_substrates.data(), sizeof(double), m, fp);
+        pCell->phenotype.molecular.internalized_total_substrates.resize(m_densities);
+        for (int idx=0; idx < m_densities; idx++)
+        {
+            fread(&dTemp, sizeof(double), 1, fp);
+            std::cout << " phenotype.molecular.internalized_total_substrates[" << idx << "] = " << dTemp << std::endl;
+            if (create_cells)
+                pCell->phenotype.molecular.internalized_total_substrates[idx] = dTemp;
+        }
+
         // fread(pCell->phenotype.molecular.fraction_released_at_death.data(), sizeof(double), m, fp);
+        pCell->phenotype.molecular.fraction_released_at_death.resize(m_densities);
+        for (int idx=0; idx < m_densities; idx++)
+        {
+            fread(&dTemp, sizeof(double), 1, fp);
+            std::cout << " phenotype.molecular.fraction_released_at_death[" << idx << "] = " << dTemp << std::endl;
+            if (create_cells)
+                pCell->phenotype.molecular.fraction_released_at_death[idx] = dTemp;
+        }
+
         // fread(pCell->phenotype.molecular.fraction_transferred_when_ingested.data(), sizeof(double), m, fp);
+        pCell->phenotype.molecular.fraction_transferred_when_ingested.resize(m_densities);
+        for (int idx=0; idx < m_densities; idx++)
+        {
+            fread(&dTemp, sizeof(double), 1, fp);
+            std::cout << " phenotype.molecular.fraction_transferred_when_ingested[" << idx << "] = " << dTemp << std::endl;
+            if (create_cells)
+                pCell->phenotype.molecular.fraction_transferred_when_ingested[idx] = dTemp;
+        }
         
+
         // Interactions
         fread(&dTemp, sizeof(double), 1, fp);
+        std::cout << "pCell->phenotype.interactions.apoptotic_phagocytosis_rate = " << dTemp <<std::endl;
+        if (create_cells)
+            pCell->phenotype.interactions.apoptotic_phagocytosis_rate = dTemp;
+
         fread(&dTemp, sizeof(double), 1, fp);
+        std::cout << "pCell->phenotype.interactions.necrotic_phagocytosis_rate = " << dTemp <<std::endl;
+        if (create_cells)
+            pCell->phenotype.interactions.necrotic_phagocytosis_rate = dTemp;
+
         fread(&dTemp, sizeof(double), 1, fp);
+        std::cout << "pCell->phenotype.interactions.other_dead_phagocytosis_rate = " << dTemp <<std::endl;
+        if (create_cells)
+            pCell->phenotype.interactions.other_dead_phagocytosis_rate = dTemp;
+
         // fread(pCell->phenotype.cell_interactions.live_phagocytosis_rates.data(), sizeof(double), n, fp);
+        pCell->phenotype.cell_interactions.live_phagocytosis_rates.resize(n_cell_types);
+        for (int idx=0; idx < n_cell_types; idx++)
+        {
+            fread(&dTemp, sizeof(double), 1, fp);
+            std::cout << " phenotype.cell_interactions.live_phagocytosis_rates[" << idx << "] = " << dTemp << std::endl;
+            if (create_cells)
+                pCell->phenotype.cell_interactions.live_phagocytosis_rates[idx] = dTemp;
+        }
+
         // fread(pCell->phenotype.cell_interactions.attack_rates.data(), sizeof(double), n, fp);
+        pCell->phenotype.cell_interactions.attack_rates.resize(n_cell_types);
+        for (int idx=0; idx < n_cell_types; idx++)
+        {
+            fread(&dTemp, sizeof(double), 1, fp);
+            std::cout << " phenotype.cell_interactions.attack_rates[" << idx << "] = " << dTemp << std::endl;
+            if (create_cells)
+                pCell->phenotype.cell_interactions.attack_rates[idx] = dTemp;
+        }
+
         // fread(pCell->phenotype.cell_interactions.immunogenicities.data(), sizeof(double), n, fp);
+        pCell->phenotype.cell_interactions.immunogenicities.resize(n_cell_types);
+        for (int idx=0; idx < n_cell_types; idx++)
+        {
+            fread(&dTemp, sizeof(double), 1, fp);
+            std::cout << " phenotype.cell_interactions.immunogenicities[" << idx << "] = " << dTemp << std::endl;
+            if (create_cells)
+                pCell->phenotype.cell_interactions.immunogenicities[idx] = dTemp;
+        }
         
         // attack_target (stored as ID, need to resolve later)
         fread(&dTemp, sizeof(double), 1, fp);
