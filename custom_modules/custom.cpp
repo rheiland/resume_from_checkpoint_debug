@@ -410,14 +410,21 @@ void dump_cells_mat(std::string filename, Microenvironment& M, bool create_cells
 
         std::cout << "------ death:\n";
         fread(&dTemp, sizeof(double), 1, fp);
-        std::cout << " phenotype.death.dead= " << bool(dTemp)  << std::endl;
+        std::cout << " phenotype.death.dead= " << int(dTemp)  << std::endl;
         if (create_cells)
-            pCell->phenotype.death.dead = (bool)dTemp;
+            // pCell->phenotype.death.dead = (bool)dTemp;
+            pCell->phenotype.death.dead = (int)dTemp;
         
+        std::cout << "------reading phenotype.death.current_death_model_index :\n";
         fread(&dTemp, sizeof(double), 1, fp);
         std::cout << " phenotype.death.current_death_model_index= " << int(dTemp)  << std::endl;
         if (create_cells)
+        {
+            std::cout << " -- try to set pCell->phenotype.death.current_death_model_index= " << int(dTemp)  << std::endl;
             pCell->phenotype.death.current_death_model_index = (int)dTemp;
+            std::cout << " -- success!" << std::endl;
+        }
+        std::cout << " -- past current_death_model_index " << std::endl;
         
         // Set nd from first cell if not set
         // if (nd == 0)
@@ -429,13 +436,14 @@ void dump_cells_mat(std::string filename, Microenvironment& M, bool create_cells
         int ndeath = 2;
         if (true)
         {
-            std::cout << "------ pCell->phenotype.death.rates.size() = " << pCell->phenotype.death.rates.size() <<" ; resetting = 2" << std::endl;
+            // std::cout << "------ pCell->phenotype.death.rates.size() = " << pCell->phenotype.death.rates.size() <<" ; resetting = 2" << std::endl;
             // <label index="28" size="2" units="1/min">death_rates</label>
+            std::cout << "------resize phenotype.death.rates :\n";
             pCell->phenotype.death.rates.resize(2);
             ndeath = 2;
         }
-        // std::cout << " phenotype.death.rates.size()= " <<  pCell->phenotype.death.rates.size()  << std::endl;
-        std::cout << " phenotype.death.rates.size()= " <<  ndeath  << std::endl;
+        std::cout << " phenotype.death.rates.size()= " <<  pCell->phenotype.death.rates.size()  << std::endl;
+        std::cout << " ndeath= " <<  ndeath  << std::endl;
         // fread(dptr, sizeof(double), ndeath, fp);
         for (int idx=0; idx < ndeath; idx++)
         {
@@ -656,19 +664,19 @@ void dump_cells_mat(std::string filename, Microenvironment& M, bool create_cells
 
         // Interactions
         fread(&dTemp, sizeof(double), 1, fp);
-        std::cout << "pCell->phenotype.interactions.apoptotic_phagocytosis_rate = " << dTemp <<std::endl;
+        std::cout << "pCell->phenotype.cell_interactions.apoptotic_phagocytosis_rate = " << dTemp <<std::endl;
         if (create_cells)
-            pCell->phenotype.interactions.apoptotic_phagocytosis_rate = dTemp;
+            pCell->phenotype.cell_interactions.apoptotic_phagocytosis_rate = dTemp;
 
         fread(&dTemp, sizeof(double), 1, fp);
-        std::cout << "pCell->phenotype.interactions.necrotic_phagocytosis_rate = " << dTemp <<std::endl;
+        std::cout << "pCell->phenotype.cell_interactions.necrotic_phagocytosis_rate = " << dTemp <<std::endl;
         if (create_cells)
-            pCell->phenotype.interactions.necrotic_phagocytosis_rate = dTemp;
+            pCell->phenotype.cell_interactions.necrotic_phagocytosis_rate = dTemp;
 
         fread(&dTemp, sizeof(double), 1, fp);
-        std::cout << "pCell->phenotype.interactions.other_dead_phagocytosis_rate = " << dTemp <<std::endl;
+        std::cout << "pCell->phenotype.cell_interactions.other_dead_phagocytosis_rate = " << dTemp <<std::endl;
         if (create_cells)
-            pCell->phenotype.interactions.other_dead_phagocytosis_rate = dTemp;
+            pCell->phenotype.cell_interactions.other_dead_phagocytosis_rate = dTemp;
 
         // fread(pCell->phenotype.cell_interactions.live_phagocytosis_rates.data(), sizeof(double), n, fp);
         pCell->phenotype.cell_interactions.live_phagocytosis_rates.resize(n_cell_types);
@@ -700,14 +708,46 @@ void dump_cells_mat(std::string filename, Microenvironment& M, bool create_cells
                 pCell->phenotype.cell_interactions.immunogenicities[idx] = dTemp;
         }
         
+        // // name = "attack_target"; 
+		// Cell* pTarget = pCell->phenotype.cell_interactions.pAttackTarget; 
+		// int AttackID = -1; 
+		// if( pTarget )
+		// { AttackID = pTarget->ID; }
+		// dTemp = (double) AttackID; 
+		// std::fwrite( &(dTemp) , sizeof(double) , 1 , fp ); 
+ 		// // name = "attack_damage_rate"; 
+		// std::fwrite( &( pCell->phenotype.cell_interactions.attack_damage_rate ) , sizeof(double) , 1 , fp ); 
+ 		// // name = "attack_duration"; 
+		// std::fwrite( &( pCell->phenotype.cell_interactions.attack_duration ) , sizeof(double) , 1 , fp ); 
+ 		// // name = "total_damage_delivered"; 
+		// std::fwrite( &( pCell->phenotype.cell_interactions.total_damage_delivered ) , sizeof(double) , 1 , fp ); 
+
         // attack_target (stored as ID, need to resolve later)
         fread(&dTemp, sizeof(double), 1, fp);
         int attack_target_id = (int)dTemp;
-        attack_target_ids.push_back(attack_target_id);
+        std::cout << "pCell->phenotype.cell_interactions.pAttackTarget = " << attack_target_id << std::endl;
+        if (attack_target_id > 0)   //rwh ??
+        {
+        // if (create_cells)
+        // attack_target_ids.push_back(attack_target_id);
+        }
         
         fread(&dTemp, sizeof(double), 1, fp);
+        std::cout << "pCell->phenotype.cell_interactions.attack_damage_rate = " << dTemp << std::endl;
+        if (create_cells)
+            pCell->phenotype.cell_interactions.attack_damage_rate = dTemp;
+
         fread(&dTemp, sizeof(double), 1, fp);
+        std::cout << "pCell->phenotype.cell_interactions.attack_duration = " << dTemp << std::endl;
+        if (create_cells)
+            pCell->phenotype.cell_interactions.attack_duration = dTemp;
+
         fread(&dTemp, sizeof(double), 1, fp);
+        std::cout << "pCell->phenotype.cell_interactions.total_damage_delivered = " << dTemp << std::endl;
+        if (create_cells)
+            pCell->phenotype.cell_interactions.total_damage_delivered = dTemp;
+
+
         // fread(pCell->phenotype.cell_interactions.fusion_rates.data(), sizeof(double), n, fp);
         
         // Transformations
@@ -715,17 +755,59 @@ void dump_cells_mat(std::string filename, Microenvironment& M, bool create_cells
         
         // Asymmetric division
         // fread(pCell->phenotype.cycle.asymmetric_division.asymmetric_division_probabilities.data(), sizeof(double), n, fp);
+
+        pCell->phenotype.cell_interactions.fusion_rates.resize(n_cell_types);
+        for (int idx=0; idx < n_cell_types; idx++)
+        {
+            fread(&dTemp, sizeof(double), 1, fp);
+            std::cout << " phenotype.cell_interactions.fusion_rates[" << idx << "] = " << dTemp << std::endl;
+            if (create_cells)
+                pCell->phenotype.cell_interactions.fusion_rates[idx] = dTemp;
+        }
+
+        pCell->phenotype.cell_transformations.transformation_rates.resize(n_cell_types);
+        for (int idx=0; idx < n_cell_types; idx++)
+        {
+            fread(&dTemp, sizeof(double), 1, fp);
+            std::cout << " phenotype.cell_transformations.transformation_rates[" << idx << "] = " << dTemp << std::endl;
+            if (create_cells)
+                pCell->phenotype.cell_transformations.transformation_rates[idx] = dTemp;
+        }
+
+        pCell->phenotype.cycle.asymmetric_division.asymmetric_division_probabilities.resize(n_cell_types);
+        for (int idx=0; idx < n_cell_types; idx++)
+        {
+            fread(&dTemp, sizeof(double), 1, fp);
+            std::cout << " phenotype.cycle.asymmetric_division.asymmetric_division_probabilities[" << idx << "] = " << dTemp << std::endl;
+            if (create_cells)
+                pCell->phenotype.cycle.asymmetric_division.asymmetric_division_probabilities[idx] = dTemp;
+        }
         
         // Cell integrity
         fread(&dTemp, sizeof(double), 1, fp);
+        std::cout << "pCell->phenotype.cell_integrity.damage= " << dTemp << std::endl;
+        if (create_cells)
+            pCell->phenotype.cell_integrity.damage = dTemp;
+
         fread(&dTemp, sizeof(double), 1, fp);
+        std::cout << "pCell->phenotype.cell_integrity.damage_rate= " << dTemp << std::endl;
+        if (create_cells)
+            pCell->phenotype.cell_integrity.damage_rate = dTemp;
+
         fread(&dTemp, sizeof(double), 1, fp);
+        std::cout << "pCell->phenotype.cell_integrity.damage_repair_rate= " << dTemp << std::endl;
+        if (create_cells)
+            pCell->phenotype.cell_integrity.damage_repair_rate = dTemp;
         
         // Custom scalar variables
         // for (int j = 0; j < pCell->custom_data.variables.size(); j++)
         // {
         //     fread(&dTemp, sizeof(double), 1, fp);
         // }
+        for (int idx=0; idx < 5; idx++)  // rwh - hardwire
+        {
+            fread(&dTemp, sizeof(double), 1, fp);
+        }
         
         // Custom vector variables
         // for (int j = 0; j < pCell->custom_data.vector_variables.size(); j++)
