@@ -736,12 +736,18 @@ void dump_cells_mat(std::string filename, Microenvironment& M, bool create_cells
         // attack_target (stored as ID, need to resolve later)
         fread(&dTemp, sizeof(double), 1, fp);
         int attack_target_id = (int)dTemp;
-        std::cout << "pCell->phenotype.cell_interactions.pAttackTarget = " << attack_target_id << std::endl;
-        if (attack_target_id > 0)   //rwh ??
-        {
-        // if (create_cells)
-        // attack_target_ids.push_back(attack_target_id);
-        }
+        std::cout << "------- pCell->phenotype.cell_interactions.pAttackTarget (attack_target ID)= " << attack_target_id << std::endl;
+        // if (attack_target_id < 0)
+        // {
+        //     std::cout << "pCell->phenotype.cell_interactions.pAttackTarget = " << attack_target_id << std::endl;
+
+        // }
+        std::cout << "---- ID for phenotype.cell_interactions.pAttackTarget = " << attack_target_id << std::endl;
+        // if (attack_target_id > 0)   //rwh ??
+        // {
+        // // if (create_cells)
+        // // attack_target_ids.push_back(attack_target_id);
+        // }
         
         fread(&dTemp, sizeof(double), 1, fp);
         std::cout << "pCell->phenotype.cell_interactions.attack_damage_rate = " << dTemp << std::endl;

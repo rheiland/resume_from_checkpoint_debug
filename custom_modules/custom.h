@@ -90,4 +90,4 @@ void custom_function( Cell* pCell, Phenotype& phenotype , double dt );
 
 void contact_function( Cell* pMe, Phenotype& phenoMe , Cell* pOther, Phenotype& phenoOther , double dt ); 
 
-void dump_cells_mat(std::string filename, Microenvironment& M);
+void dump_cells_mat(std::string filename, Microenvironment& M, bool create_cells);

@@ -126,20 +126,33 @@ int main( int argc, char* argv[] )
 
 
     //---------
-    setup_tissue();
-    //---------  custom code to read in checkpoint files (replaces setup_tissue)
-    //---------
+    bool run_normal = true;
+    if (run_normal)
+    {
+        setup_tissue();
+    }
+    else
+    {
+        //---------  custom code to read in checkpoint files (replaces setup_tissue)
+        //---------
 
-    //  resume simulation from previous checkpoint files
-    // std::string mat_filename = "outputs/tumor_immune_base/output00000024_microenvironment0.mat";
-    // std::string mat_filename = "outputs/tumor_immune_base/output00000024_microenvironment0.mat";
-    std::string mat_filename = "output_test_resume_2cells/output00000030_microenvironment0.mat";
-    // bool read_flag = rwh_read_microenvironment_from_matlab( mat_filename );
-    // bool read_flag = read_microenvironment_from_matlab( mat_filename );
+        //  resume simulation from previous checkpoint files
+        // std::string mat_filename = "outputs/tumor_immune_base/output00000024_microenvironment0.mat";
+        // std::string mat_filename = "output_test_resume_2cells/output00000030_microenvironment0.mat";
+        // std::string mat_filename = "output_test_resume_2cells_2/output00000001_microenvironment0.mat";
+        std::string mat_filename = "output_test_resume_2cells_2/output00000014_microenvironment0.mat";
+        // bool read_flag = rwh_read_microenvironment_from_matlab( mat_filename );
+        bool read_flag = read_microenvironment_from_matlab( mat_filename );
 
-    // std::string cells_mat_filename = "outputs/tumor_immune_base/output00000024_cells.mat";
-    std::string cells_mat_filename = "output_test_resume_2cells/output00000030_cells.mat";
-    // read_PhysiCell_cells_from_matlab_v2(cells_mat_filename, microenvironment);
+        // std::string cells_mat_filename = "outputs/tumor_immune_base/output00000024_cells.mat";
+        // std::string cells_mat_filename = "output_test_resume_2cells/output00000030_cells.mat";
+        // std::string cells_mat_filename = "output_test_resume_2cells_2/output00000001_cells.mat";
+        std::string cells_mat_filename = "output_test_resume_2cells_2/output00000014_cells.mat";
+        // read_PhysiCell_cells_from_matlab_v2(cells_mat_filename, microenvironment);
+        dump_cells_mat(cells_mat_filename, microenvironment, false);
+
+        exit(-1);
+    }
 
 
 	/* Users typically stop modifying here. END USERMODS */ 
@@ -275,6 +288,13 @@ int main( int argc, char* argv[] )
 
 	std::cout << std::endl << "Total simulation runtime: " << std::endl; 
 	BioFVM::display_stopwatch_value( std::cout , BioFVM::runtime_stopwatch_value() ); 
+
+    // rwh
+        std::string mat_filename = "output_test_attack_2cells/output00000006_microenvironment0.mat";
+        bool read_flag = read_microenvironment_from_matlab( mat_filename );
+
+        std::string cells_mat_filename = "output_test_attack_2cells/output00000006_cells.mat";
+        dump_cells_mat(cells_mat_filename, microenvironment, false);
 
 	return 0; 
 }
