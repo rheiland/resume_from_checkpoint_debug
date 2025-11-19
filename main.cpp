@@ -126,7 +126,7 @@ int main( int argc, char* argv[] )
 
 
     //---------
-    bool run_normal = true;
+    bool run_normal = false;
     if (run_normal)
     {
         setup_tissue();
@@ -140,16 +140,24 @@ int main( int argc, char* argv[] )
         // std::string mat_filename = "outputs/tumor_immune_base/output00000024_microenvironment0.mat";
         // std::string mat_filename = "output_test_resume_2cells/output00000030_microenvironment0.mat";
         // std::string mat_filename = "output_test_resume_2cells_2/output00000001_microenvironment0.mat";
-        std::string mat_filename = "output_test_resume_2cells_2/output00000014_microenvironment0.mat";
+        // std::string mat_filename = "output_test_resume_2cells_2/output00000014_microenvironment0.mat";
+        std::string mat_filename = "output_test_resume_phases/output00000071_microenvironment0.mat";
         // bool read_flag = rwh_read_microenvironment_from_matlab( mat_filename );
-        bool read_flag = read_microenvironment_from_matlab( mat_filename );
+        // bool read_flag = read_microenvironment_from_matlab( mat_filename );
 
         // std::string cells_mat_filename = "outputs/tumor_immune_base/output00000024_cells.mat";
         // std::string cells_mat_filename = "output_test_resume_2cells/output00000030_cells.mat";
         // std::string cells_mat_filename = "output_test_resume_2cells_2/output00000001_cells.mat";
-        std::string cells_mat_filename = "output_test_resume_2cells_2/output00000014_cells.mat";
+        // std::string cells_mat_filename = "output_test_resume_2cells_2/output00000014_cells.mat";
+        std::string cells_mat_filename = "output_test_resume_phases/output00000071_cells.mat";
         // read_PhysiCell_cells_from_matlab_v2(cells_mat_filename, microenvironment);
-        dump_cells_mat(cells_mat_filename, microenvironment, false);
+
+        std::string resume_filename = "output_test_resume_phases/output00000071.xml";
+        // dump_cells_mat(cells_mat_filename, microenvironment, true);
+        // dump_cells_mat(resume_filename, true);
+        resume_from_MultiCellDS_xml("output_test_resume_phases", "output00000071.xml");
+
+        // PhysiCell_globals.current_time = 
 
         exit(-1);
     }
@@ -290,11 +298,13 @@ int main( int argc, char* argv[] )
 	BioFVM::display_stopwatch_value( std::cout , BioFVM::runtime_stopwatch_value() ); 
 
     // rwh
-        std::string mat_filename = "output_test_attack_2cells/output00000006_microenvironment0.mat";
-        bool read_flag = read_microenvironment_from_matlab( mat_filename );
+    // std::string mat_filename = "output_test_attack_2cells/output00000006_microenvironment0.mat";
+    std::string mat_filename = "output_test_resume_phases/output00000034_microenvironment0.mat";
+    bool read_flag = read_microenvironment_from_matlab( mat_filename );
 
-        std::string cells_mat_filename = "output_test_attack_2cells/output00000006_cells.mat";
-        dump_cells_mat(cells_mat_filename, microenvironment, false);
+    // std::string cells_mat_filename = "output_test_attack_2cells/output00000006_cells.mat";
+    std::string cells_mat_filename = "output_test_resume_phases/output00000034_cells.mat";
+    dump_cells_mat(cells_mat_filename, microenvironment, false);
 
 	return 0; 
 }

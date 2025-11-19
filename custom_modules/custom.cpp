@@ -824,7 +824,8 @@ void dump_cells_mat(std::string filename, Microenvironment& M, bool create_cells
         // {
         //     fread(&dTemp, sizeof(double), 1, fp);
         // }
-        for (int idx=0; idx < 5; idx++)  // rwh - hardwire
+        // for (int idx=0; idx < 5; idx++)  // rwh - hardwire
+        for (int idx=0; idx < 1; idx++)  // rwh - hardwire
         {
             fread(&dTemp, sizeof(double), 1, fp);
         }
@@ -868,3 +869,89 @@ void dump_cells_mat(std::string filename, Microenvironment& M, bool create_cells
     std::cout << "read " << number_of_data_entries << " cells from " << filename << std::endl;
     std::cout << "------- END dump_cells_mat ----------\n";
 }
+//------------------------------------------------------------
+
+int resume_from_MultiCellDS_xml(std::string folder_path, std::string filename)
+{
+    // std::cout << "--------- resume_from_MultiCellDS_xml: folder_path= " << folder_path << ", filename= " << filename << std::endl;
+    std::string xml_filename = folder_path + "/" + filename;
+    std::cout << xml_filename << std::endl;
+    std::cout << "--------- resume_from_MultiCellDS_xml: xml_filename= " << xml_filename << std::endl;
+
+    pugi::xml_document doc; 
+    if (!doc.load_file( xml_filename.c_str()  ) )
+    {
+        std::cout << "Invalid file: " << xml_filename << std::endl;
+        return -1;
+    }
+    std::cout << "-- successfully read" << std::endl;
+
+    // using namespace pugi;
+    // xml_node root = xml_dom.child("MultiCellDS");
+    // root = root.child( "microenvironment");
+    // root = root.child("domain");
+
+    pugi::xml_node microenv_data = doc.child("MultiCellDS").child("microenvironment").child("domain").child("data");
+    if (!microenv_data)
+    {
+        std::cout << "Error parsing microenv data: " << std::endl;
+        return -1;
+    }
+            // <data type="matlab">
+			// 	<filename>output00000071_microenvironment0.mat</filename>
+			// </data>
+    // TODO: confirm 'type="matlab"'
+    // std::string m_name = microenv_data.child_value("filename");
+
+    // pugi::xpath_node_set nodes = doc.select_node("//item[@id='123']")
+    // pugi::xpath_node_set node = doc.select_node("//microenvironment//domain//data[@type='matlab']")
+    pugi::xpath_node xpath_node = doc.select_node("//microenvironment//domain//data[@type='matlab']");
+    // pugi::xpath_node xpath_node = doc.select_node("//microenvironment//domain//data[@type='csv']");
+    pugi::xml_node node = xpath_node.node();
+    if (!node)
+    {
+        std::cout << "\n --- Error parsing microenv matlab data\n" << std::endl;
+        return -1;
+    }
+    std::string matlab_name = node.child_value("filename");
+    std::string microenv_mat_filename = folder_path + "/" + matlab_name;
+    std::cout << "\n--- calling read_microenvironment_from_matlab" << std::endl;
+    bool read_microenv_flag = read_microenvironment_from_matlab( microenv_mat_filename );
+    if (read_microenv_flag )
+    {
+        std::cout << "\n   Success!\n" << std::endl;
+    }
+    else
+    {
+        std::cout << "   Error reading microenv matlab data " << std::endl;
+        return -1;
+    }
+
+    // 	<cellular_information>
+	// 	<cell_populations>
+	// 		<cell_population type="individual">
+	// 			<custom>
+	// 				<simplified_data type="matlab" source="PhysiCell" data_version="2">
+    std::cout << "\nreading //cellular_information//cell_populations//custom//simplified_data[@type='matlab']//filename" << std::endl;
+    xpath_node = doc.select_node("//cellular_information//cell_populations//custom//simplified_data[@type='matlab']//filename");
+    node = xpath_node.node();
+    if (node)
+    {
+        std::cout << "\n   Success!\n" << std::endl;
+    }
+    else
+    {
+        std::cout << "\n --- Error parsing cellular matlab data\n" << std::endl;
+        return -1;
+    }
+
+    matlab_name = xml_get_my_string_value(node);
+    std::cout << "\n ---> " << matlab_name << std::endl;
+    std::string cells_mat_filename = folder_path + "/" + matlab_name;
+    std::cout << " ---> " << cells_mat_filename << std::endl;
+
+    // pugi::xml_node microenv_data = doc.child("MultiCellDS").child("microenvironment").child("filename").child("data");
+
+    return 0;
+}
+
