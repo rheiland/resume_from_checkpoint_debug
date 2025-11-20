@@ -141,7 +141,7 @@ int main( int argc, char* argv[] )
         // std::string mat_filename = "output_test_resume_2cells/output00000030_microenvironment0.mat";
         // std::string mat_filename = "output_test_resume_2cells_2/output00000001_microenvironment0.mat";
         // std::string mat_filename = "output_test_resume_2cells_2/output00000014_microenvironment0.mat";
-        std::string mat_filename = "output_test_resume_phases/output00000071_microenvironment0.mat";
+        // std::string mat_filename = "output_test_resume_phases/output00000071_microenvironment0.mat";
         // bool read_flag = rwh_read_microenvironment_from_matlab( mat_filename );
         // bool read_flag = read_microenvironment_from_matlab( mat_filename );
 
@@ -157,11 +157,15 @@ int main( int argc, char* argv[] )
         // dump_cells_mat(cells_mat_filename, microenvironment, true);
         // dump_cells_mat(resume_filename, true);
         // resume_from_MultiCellDS_xml("output_test_resume_phases", "output00000071.xml");
+
+        // This sets PhysiCell_globals.current_time to be that of resumed checkpoint
         resume_from_MultiCellDS_xml("output_test_resume_phases_custom_vec", "output00000071.xml");
 
-        // PhysiCell_globals.current_time = 
+        // Need to adjust these values
+        PhysiCell_globals.next_full_save_time = PhysiCell_globals.current_time + PhysiCell_settings.full_save_interval;
+        PhysiCell_globals.next_SVG_save_time = PhysiCell_globals.current_time + PhysiCell_settings.SVG_save_interval;
 
-        exit(-1);
+        // exit(-1);
     }
 
 
@@ -306,7 +310,7 @@ int main( int argc, char* argv[] )
 
     // std::string cells_mat_filename = "output_test_attack_2cells/output00000006_cells.mat";
     std::string cells_mat_filename = "output_test_resume_phases/output00000034_cells.mat";
-    dump_cells_mat(cells_mat_filename, microenvironment, false);
+    // dump_cells_mat(cells_mat_filename, microenvironment, false);
 
 	return 0; 
 }

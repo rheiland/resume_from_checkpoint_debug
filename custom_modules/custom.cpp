@@ -214,7 +214,7 @@ void contact_function( Cell* pMe, Phenotype& phenoMe , Cell* pOther, Phenotype& 
 { return; } 
 
 //------------------------------------------------------------
-void dump_cells_mat(std::string filename, Microenvironment& M, bool create_cells)
+void dump_cells_mat(std::string filename, Microenvironment& M, std::vector<std::pair<std::string, int>> custom_data_vars, bool create_cells)
 {
     std::cout << "\n------- read START dump_cells_mat (custom.cpp) ----------\n";
 
@@ -858,9 +858,20 @@ void dump_cells_mat(std::string filename, Microenvironment& M, bool create_cells
         //     fread(&dTemp, sizeof(double), 1, fp);
         // }
         // for (int idx=0; idx < 5; idx++)  // rwh - hardwire
-        for (int idx=0; idx < 1; idx++)  // rwh - hardwire
+        // for (int idx=0; idx < 1; idx++)  // rwh - hardwire
+        // {
+        //     fread(&dTemp, sizeof(double), 1, fp);
+        // }
+
+        std::cout << "   ----  reading custom data  ----" << std::endl;
+        for (const auto& pair : custom_data_vars) 
         {
-            fread(&dTemp, sizeof(double), 1, fp);
+            for (int jj=0; jj<pair.second; jj++) 
+            {
+                // std::cout << "pair.first << ", size: " << pair.second << std::endl;
+                fread(&dTemp, sizeof(double), 1, fp);
+                std::cout << pair.first << ": " << dTemp << std::endl;
+            }
         }
         
         // Custom vector variables
@@ -874,6 +885,11 @@ void dump_cells_mat(std::string filename, Microenvironment& M, bool create_cells
         // (*all_cells).push_back(pCell);
     }
     
+    if (create_cells)
+    {
+        std::cout << "--- (*all_cells).size() = " << (*all_cells).size() << std::endl;
+    }
+
     fclose(fp);
     
     // Resolve attack target pointers
@@ -906,6 +922,9 @@ void dump_cells_mat(std::string filename, Microenvironment& M, bool create_cells
 //------------------------------------------------------------
 int resume_from_MultiCellDS_xml(std::string folder_path, std::string xml_filename)
 {
+    pugi::xpath_node xpath_node;
+    pugi::xml_node node;
+
     // std::cout << "--------- resume_from_MultiCellDS_xml: folder_path= " << folder_path << ", filename= " << filename << std::endl;
     std::string xml_filepath = folder_path + "/" + xml_filename;
     std::cout << xml_filepath << std::endl;
@@ -919,6 +938,33 @@ int resume_from_MultiCellDS_xml(std::string folder_path, std::string xml_filenam
     }
     std::cout << "-- successfully read" << std::endl;
 
+    // pugi::xml_node node_time = doc.child("metadata").child("current_time");
+    // if (!node_time)
+    // {
+    //     std::cout << "Error parsing metadata//current_time: " << std::endl;
+    //     return -1;
+    // }
+
+    xpath_node = doc.select_node("//metadata//current_time");
+    node = xpath_node.node();
+    if (node)
+    {
+        std::cout << "\n   Success reading current_time\n" << std::endl;
+        PhysiCell_globals.current_time = xml_get_my_double_value(node);
+        std::cout << "--- resetting PhysiCell_globals.current_time " << PhysiCell_globals.current_time  << std::endl;
+    }
+    else
+    {
+        std::cout << " --- Error reading  metadata//current_time\n" << std::endl;
+        return -1;
+    }
+
+    // Ugh, do we need to "continue" the previous runtime too? Not now.
+    // xpath_node = doc.select_node("//metadata//current_runtime");
+    // from main.cpp:
+    // std::cout << std::endl << "Total simulation runtime: " << std::endl; 
+	// BioFVM::display_stopwatch_value( std::cout , BioFVM::runtime_stopwatch_value() ); 
+
     // using namespace pugi;
     // xml_node root = xml_dom.child("MultiCellDS");
     // root = root.child( "microenvironment");
@@ -930,6 +976,8 @@ int resume_from_MultiCellDS_xml(std::string folder_path, std::string xml_filenam
         std::cout << "Error parsing microenv data: " << std::endl;
         return -1;
     }
+
+
             // <data type="matlab">
 			// 	<filename>output00000071_microenvironment0.mat</filename>
 			// </data>
@@ -938,9 +986,9 @@ int resume_from_MultiCellDS_xml(std::string folder_path, std::string xml_filenam
 
     // pugi::xpath_node_set nodes = doc.select_node("//item[@id='123']")
     // pugi::xpath_node_set node = doc.select_node("//microenvironment//domain//data[@type='matlab']")
-    pugi::xpath_node xpath_node = doc.select_node("//microenvironment//domain//data[@type='matlab']");
+    xpath_node = doc.select_node("//microenvironment//domain//data[@type='matlab']");
     // pugi::xpath_node xpath_node = doc.select_node("//microenvironment//domain//data[@type='csv']");
-    pugi::xml_node node = xpath_node.node();
+    node = xpath_node.node();
     if (!node)
     {
         std::cout << "\n --- Error parsing microenv matlab data\n" << std::endl;
@@ -994,27 +1042,6 @@ int resume_from_MultiCellDS_xml(std::string folder_path, std::string xml_filenam
         return -1;
     }
 
-
-    std::vector<std::string> custom_data_scalars;
-    node = node.next_sibling(); // Move to the next sibling
-    while (node) {
-                // <label index="100" size="1" units="dimensionless">sample</label>
-        // std::cout << "  Node name: " << node.name();   // = label
-        std::string var = xml_get_my_string_value(node);
-        std::cout << "var: " << var << std::endl;  
-        if (node.attribute("index")) {
-            std::cout << "  index: " << node.attribute("index").value() << std::endl;  
-            std::cout << "  size: " << node.attribute("size").value() << std::endl;  
-            // double vsize = node.attribute("size").value().as_double();
-            // double vsize = node.attribute("size").value();
-            // node.text().as_double()
-            // std::cout << "vsize: " << vsize << std::endl;  
-            custom_data_scalars.push_back(var);
-        }
-        // std::cout << std::endl;
-        node = node.next_sibling(); // Move to the next sibling
-    }
-
     // NOTE: even if a custom vector is defined before a custom scalar in the config file .xml,
     //    they will be reordered in the "output000<#>.xml" to have all scalars followed by vectors
                 // <label index="99" size="1" units="1/min">damage_repair_rate</label>
@@ -1022,6 +1049,26 @@ int resume_from_MultiCellDS_xml(std::string folder_path, std::string xml_filenam
                 // <label index="101" size="1" units="">dummy</label>
                 // <label index="101" size="1" units="">dummy2</label>
                 // <label index="102" size="3" units="">myvec</label>
+
+    // store the name of the custom data [vector] variable and its size (# of values)
+    std::vector<std::pair<std::string, int>> custom_data_vars;
+    node = node.next_sibling(); // Move to the next sibling
+    while (node) {
+        std::string var = xml_get_my_string_value(node);
+        std::cout << "var: " << var << std::endl;  
+        if (node.attribute("index")) {
+            std::cout << "  index: " << node.attribute("index").value() << std::endl;  
+            int mysize = std::stoi(node.attribute("size").value());  
+            std::cout << "  size: " << mysize << std::endl;  
+            custom_data_vars.push_back({var, mysize});
+        }
+        node = node.next_sibling(); // Move to the next sibling
+    }
+    for (const auto& pair : custom_data_vars) 
+    {
+        std::cout << "name: " << pair.first << ", size: " << pair.second << std::endl;
+    }
+
 
     std::cout << "\nreading //cellular_information//cell_populations//custom//simplified_data[@type='matlab']//filename" << std::endl;
     xpath_node = doc.select_node("//cellular_information//cell_populations//custom//simplified_data[@type='matlab']//filename");
@@ -1044,8 +1091,7 @@ int resume_from_MultiCellDS_xml(std::string folder_path, std::string xml_filenam
     // pugi::xml_node microenv_data = doc.child("MultiCellDS").child("microenvironment").child("filename").child("data");
 
     bool create_cells_flag = true;
-    create_cells_flag = false;
-    // dump_cells_mat(cells_mat_filename, microenvironment, create_cells_flag);
+    // create_cells_flag = false;
+    dump_cells_mat(cells_mat_filename, microenvironment, custom_data_vars, create_cells_flag);
     return 0;
 }
-
