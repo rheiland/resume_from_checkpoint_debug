@@ -819,6 +819,39 @@ void dump_cells_mat(std::string filename, Microenvironment& M, bool create_cells
         if (create_cells)
             pCell->phenotype.cell_integrity.damage_repair_rate = dTemp;
         
+
+            // -- from core/PhysiCell_cell.cpp
+            //
+            // if( values.size() == 1 )
+            // {
+            //     // find the variable 
+            //     int n = pCD->custom_data.find_variable_index( name ); 
+            //     // if it exists, overwrite 
+            //     if( n > -1 )
+            //     { pCD->custom_data.variables[n].value = values[0]; }
+            //     // otherwise, add 
+            //     else
+            //     { pCD->custom_data.add_variable( name, units, values[0] ); }
+
+            //     n = pCD->custom_data.find_variable_index( name ); 
+            //     pCD->custom_data.variables[n].conserved_quantity = conserved;
+            // }
+            // // or vector 
+            // else
+            // { 
+            //     // find the variable 
+            //     int n = pCD->custom_data.find_vector_variable_index( name ); 
+            //     // if it exists, overwrite 
+            //     if( n > -1 )
+            //     { pCD->custom_data.vector_variables[n].value = values; }
+            //     // otherwise, add 
+            //     else
+            //     { pCD->custom_data.add_vector_variable( name, units, values ); }
+
+            //     n = pCD->custom_data.find_vector_variable_index( name ); 
+            //     pCD->custom_data.vector_variables[n].conserved_quantity = conserved;
+            // }
+
         // Custom scalar variables
         // for (int j = 0; j < pCell->custom_data.variables.size(); j++)
         // {
@@ -869,19 +902,19 @@ void dump_cells_mat(std::string filename, Microenvironment& M, bool create_cells
     std::cout << "read " << number_of_data_entries << " cells from " << filename << std::endl;
     std::cout << "------- END dump_cells_mat ----------\n";
 }
-//------------------------------------------------------------
 
-int resume_from_MultiCellDS_xml(std::string folder_path, std::string filename)
+//------------------------------------------------------------
+int resume_from_MultiCellDS_xml(std::string folder_path, std::string xml_filename)
 {
     // std::cout << "--------- resume_from_MultiCellDS_xml: folder_path= " << folder_path << ", filename= " << filename << std::endl;
-    std::string xml_filename = folder_path + "/" + filename;
-    std::cout << xml_filename << std::endl;
-    std::cout << "--------- resume_from_MultiCellDS_xml: xml_filename= " << xml_filename << std::endl;
+    std::string xml_filepath = folder_path + "/" + xml_filename;
+    std::cout << xml_filepath << std::endl;
+    std::cout << "--------- resume_from_MultiCellDS_xml: xml_filepath= " << xml_filepath << std::endl;
 
     pugi::xml_document doc; 
-    if (!doc.load_file( xml_filename.c_str()  ) )
+    if (!doc.load_file(  xml_filepath.c_str()  ) )
     {
-        std::cout << "Invalid file: " << xml_filename << std::endl;
+        std::cout << "Invalid file: " <<  xml_filepath << std::endl;
         return -1;
     }
     std::cout << "-- successfully read" << std::endl;
@@ -932,6 +965,64 @@ int resume_from_MultiCellDS_xml(std::string folder_path, std::string filename)
 	// 		<cell_population type="individual">
 	// 			<custom>
 	// 				<simplified_data type="matlab" source="PhysiCell" data_version="2">
+
+    // Let's confirm the last cell param, before the custom data vars, is what we expect.
+    // If/when this labels list is modified, this code will need to be updated.
+
+    std::string label_path = "//cellular_information//cell_populations//custom//simplified_data//labels//label[@index=99]";
+    std::cout << "\nreading " << label_path << std::endl;
+    // xpath_node = doc.select_node(label_path);   // not allowed
+
+                // <label index="99" size="1" units="1/min">damage_repair_rate</label>
+                // <label index="100" size="1" units="dimensionless">sample</label>
+    xpath_node = doc.select_node("//cellular_information//cell_populations//custom//simplified_data//labels//label[@index=99]");
+    node = xpath_node.node();
+    if (node)
+    {
+        std::cout << "\n   Success!\n" << std::endl;
+    }
+    else
+    {
+        std::cout << "\n --- Error reading node\n" << std::endl;
+        return -1;
+    }
+    std::string last_var = xml_get_my_string_value(node);
+    std::cout << "last_var= " << last_var << std::endl;
+    if (last_var != "damage_repair_rate")
+    {
+        std::cout << "\n   Error: last var should be 'damage_repair_rate'\n" << std::endl;
+        return -1;
+    }
+
+
+    std::vector<std::string> custom_data_scalars;
+    node = node.next_sibling(); // Move to the next sibling
+    while (node) {
+                // <label index="100" size="1" units="dimensionless">sample</label>
+        // std::cout << "  Node name: " << node.name();   // = label
+        std::string var = xml_get_my_string_value(node);
+        std::cout << "var: " << var << std::endl;  
+        if (node.attribute("index")) {
+            std::cout << "  index: " << node.attribute("index").value() << std::endl;  
+            std::cout << "  size: " << node.attribute("size").value() << std::endl;  
+            // double vsize = node.attribute("size").value().as_double();
+            // double vsize = node.attribute("size").value();
+            // node.text().as_double()
+            // std::cout << "vsize: " << vsize << std::endl;  
+            custom_data_scalars.push_back(var);
+        }
+        // std::cout << std::endl;
+        node = node.next_sibling(); // Move to the next sibling
+    }
+
+    // NOTE: even if a custom vector is defined before a custom scalar in the config file .xml,
+    //    they will be reordered in the "output000<#>.xml" to have all scalars followed by vectors
+                // <label index="99" size="1" units="1/min">damage_repair_rate</label>
+                // <label index="100" size="1" units="dimensionless">sample</label>
+                // <label index="101" size="1" units="">dummy</label>
+                // <label index="101" size="1" units="">dummy2</label>
+                // <label index="102" size="3" units="">myvec</label>
+
     std::cout << "\nreading //cellular_information//cell_populations//custom//simplified_data[@type='matlab']//filename" << std::endl;
     xpath_node = doc.select_node("//cellular_information//cell_populations//custom//simplified_data[@type='matlab']//filename");
     node = xpath_node.node();
@@ -952,6 +1043,9 @@ int resume_from_MultiCellDS_xml(std::string folder_path, std::string filename)
 
     // pugi::xml_node microenv_data = doc.child("MultiCellDS").child("microenvironment").child("filename").child("data");
 
+    bool create_cells_flag = true;
+    create_cells_flag = false;
+    // dump_cells_mat(cells_mat_filename, microenvironment, create_cells_flag);
     return 0;
 }
 

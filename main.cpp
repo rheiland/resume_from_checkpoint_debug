@@ -149,13 +149,15 @@ int main( int argc, char* argv[] )
         // std::string cells_mat_filename = "output_test_resume_2cells/output00000030_cells.mat";
         // std::string cells_mat_filename = "output_test_resume_2cells_2/output00000001_cells.mat";
         // std::string cells_mat_filename = "output_test_resume_2cells_2/output00000014_cells.mat";
-        std::string cells_mat_filename = "output_test_resume_phases/output00000071_cells.mat";
+        // std::string cells_mat_filename = "output_test_resume_phases/output00000071_cells.mat";
+        // std::string cells_mat_filename = "output_test_resume_phases_custom_vec/output00000071_cells.mat";
         // read_PhysiCell_cells_from_matlab_v2(cells_mat_filename, microenvironment);
 
-        std::string resume_filename = "output_test_resume_phases/output00000071.xml";
+        // std::string resume_filename = "output_test_resume_phases/output00000071.xml";
         // dump_cells_mat(cells_mat_filename, microenvironment, true);
         // dump_cells_mat(resume_filename, true);
-        resume_from_MultiCellDS_xml("output_test_resume_phases", "output00000071.xml");
+        // resume_from_MultiCellDS_xml("output_test_resume_phases", "output00000071.xml");
+        resume_from_MultiCellDS_xml("output_test_resume_phases_custom_vec", "output00000071.xml");
 
         // PhysiCell_globals.current_time = 
 
