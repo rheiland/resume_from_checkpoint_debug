@@ -309,6 +309,7 @@ void dump_cells_mat(std::string filename, Microenvironment& M, std::vector<std::
             pCell->update_voxel_index();
         }
         
+        // -------- cycle and phase params
         fread(&dTemp, sizeof(double), 1, fp);
         std::cout << "phenotype.cycle.model().code= " << int(dTemp)  << std::endl;
         if (create_cells)
@@ -316,7 +317,10 @@ void dump_cells_mat(std::string filename, Microenvironment& M, std::vector<std::
         
         fread(&dTemp, sizeof(double), 1, fp);
         // std::cout << "phenotype.cycle.current_phase()= " << int(dTemp)  << std::endl;
-        std::cout << "phenotype.cycle.current_phase().code = current_phase(?) = " << int(dTemp)  << std::endl;
+        int current_phase_code = int(dTemp);   // rwh: use below
+        std::cout << "current_phase_code = " << current_phase_code << std::endl;
+        std::cout << "phenotype.cycle.current_phase().code = " << int(dTemp)  << std::endl;
+        // rwh: we get 
         if (create_cells)
             pCell->phenotype.cycle.current_phase().code = int(dTemp);
         
@@ -325,6 +329,8 @@ void dump_cells_mat(std::string filename, Microenvironment& M, std::vector<std::
         if (create_cells)
             pCell->phenotype.cycle.data.elapsed_time_in_phase = dTemp;
         
+
+        // -------- volume params
         fread(&dTemp, sizeof(double), 1, fp);
         std::cout << "phenotype.volume.nuclear= " << dTemp  << std::endl;
         if (create_cells)
@@ -345,6 +351,8 @@ void dump_cells_mat(std::string filename, Microenvironment& M, std::vector<std::
         if (create_cells)
             pCell->phenotype.volume.calcified_fraction = dTemp;
         
+
+        // -------- state 
         fread(orientation, sizeof(double), 3, fp);
         std::cout << "orientation= " << orientation[0]<<", "<<orientation[1]<<", " << orientation[2]  << std::endl;
         if (create_cells)
@@ -354,6 +362,7 @@ void dump_cells_mat(std::string filename, Microenvironment& M, std::vector<std::
             pCell->state.orientation[2] = orientation[2];
         }
         
+        // -------- geometry 
         fread(&dTemp, sizeof(double), 1, fp);
         std::cout << "phenotype.geometry.polarity= " << dTemp  << std::endl;
         if (create_cells)
@@ -393,13 +402,15 @@ void dump_cells_mat(std::string filename, Microenvironment& M, std::vector<std::
 
         std::cout << "------ cycle:\n";
         // current_cycle_phase_exit_rate
-        // rwh - what do I use??
-        // int phase_index = pCell->phenotype.cycle.data.current_phase_index;
-        // int phase_index = pCell->phenotype.cycle.current_phase().code;
+
+        // e.g., phenotype.cycle.model().find_phase_index( PhysiCell_constants::quiescent )
+        int phase_index = pCell->phenotype.cycle.model().find_phase_index(current_phase_code);
+        std::cout << "  --- phase_index =" << phase_index  << std::endl;
+
         fread(&dTemp, sizeof(double), 1, fp);
         std::cout << "phenotype.cycle.data.exit_rate(phase_index)= " << dTemp  << std::endl;
-        // if (create_cells)
-        //     pCell->phenotype.cycle.data.exit_rate(phase_index) = dTemp;    // rwh - fix this!!
+        if (create_cells)
+            pCell->phenotype.cycle.data.exit_rate(phase_index) = dTemp;    // rwh - correct??
         
         // elapsed_time_in_phase (duplicate: rf. https://github.com/MathCancer/PhysiCell/pull/380)
         fread(&dTemp, sizeof(double), 1, fp);
