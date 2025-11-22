@@ -877,11 +877,48 @@ void dump_cells_mat(std::string filename, Microenvironment& M, std::vector<std::
         std::cout << "   ----  reading custom data  ----" << std::endl;
         for (const auto& pair : custom_data_vars) 
         {
-            for (int jj=0; jj<pair.second; jj++) 
+            if (pair.second == 1)   // got a custom (scalar) variable
             {
-                // std::cout << "pair.first << ", size: " << pair.second << std::endl;
                 fread(&dTemp, sizeof(double), 1, fp);
-                std::cout << pair.first << ": " << dTemp << std::endl;
+                std::cout << "custom var: " << pair.first << " = " << dTemp << std::endl;
+
+                // find the variable 
+                // int n = pCD->custom_data.find_variable_index( name ); 
+                int idx_var = pCell->custom_data.find_variable_index( pair.first ); 
+                // if it exists, overwrite 
+                if( idx_var > -1 )
+                { 
+                    pCell->custom_data.variables[idx_var].value = pair.second; 
+                }
+                else
+                {
+                    std::cout << "   Error: got an invalid custom data var name: " << pair.first << std::endl;
+                    std::exit(-1);
+                }
+            }
+
+            else   // got a custom vector variable
+            {
+                for (int jj=0; jj<pair.second; jj++)   // loop over all elms of the vector
+                {
+                    // std::cout << "pair.first << ", size: " << pair.second << std::endl;
+                    fread(&dTemp, sizeof(double), 1, fp);
+                    std::cout << "custom vector var: " << pair.first << "[" << jj << "] = " << dTemp << std::endl;
+
+                    // find the variable 
+                    // int n = pCD->custom_data.find_variable_index( name ); 
+                    int idx_var = pCell->custom_data.find_vector_variable_index( pair.first ); 
+                    // if it exists, overwrite 
+                    if( idx_var > -1 )
+                    { 
+                        pCell->custom_data.vector_variables[idx_var].value[jj] = pair.second;
+                    }
+                    else
+                    {
+                        std::cout << "   Error: got an invalid custom data vector var name: " << pair.first << std::endl;
+                        // std::exit(-1);
+                    }
+                }
             }
         }
         
